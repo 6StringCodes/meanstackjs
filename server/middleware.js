@@ -25,6 +25,47 @@ exports.isAuthenticated = function (req, res, next) {
     })
   }
 }
+
+exports.isAuthorized = function (name, extra) {
+  return function (req, res, next) {
+    var user
+    try {
+      if (extra) user = req[name][extra].user
+      else user = req[name].user
+    } catch (err) {
+      next(err)
+    }
+    if (req.isAuthenticated()) {
+      if (user._id.toString() !== req.user._id.toString()) {
+        debug('middleware: is Not Authorized')
+        return next({
+          status: 401,
+          msg: 'User is not Authorized'
+        })
+      } else {
+        debug('middleware: isAuthenticated')
+        return next()
+      }
+    } else {
+      debug('middleware: is Not Authorized ')
+      return res.status(401).send({
+        success: false,
+        msg: 'User needs to re-authenticated'
+      })
+    }
+  }
+}
+exports.hasRole = function (role) {
+  return function (req, res, next) {
+    if (!req.isAuthenticated() || req.user.roles.indexOf(role) === -1) {
+      return res.status(403).send({
+        success: false,
+        msg: 'Forbidden'
+      })
+    }
+    next()
+  }
+}
 exports.isAdmin = function (req, res, next) {
   if (req.isAuthenticated()) {
     debug('middleware: isAdmin')
@@ -72,17 +113,24 @@ exports.verify = function (req, res, next) {
               break
           }
         } else {
-          User.findOne({
-            email: decoded.email
-          }, function (err, user) {
-            if (err) throw err
-            if (!user) {
-              return res.status(401).send({success: false, msg: 'Authentication failed. User not found.'})
-            } else {
-              debug('middleware verify user: ', user.email)
-              next()
-            }
-          })
+          if (decoded._id === req.user._id.toString()) {
+            User.findOne({
+              _id: decoded._id
+            }, function (err, user) {
+              if (err) throw err
+              if (!user) {
+                return res.status(401).send({success: false, msg: 'Authentication failed. User not found.'})
+              } else {
+                debug('middleware verify user: ', user.email)
+                next()
+              }
+            })
+          } else {
+            res.status(401).send({
+              success: false,
+              msg: 'Please log in'
+            })
+          }
         }
       })
     } else {

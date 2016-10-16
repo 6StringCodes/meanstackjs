@@ -5,24 +5,24 @@
     .module('app.user')
     .factory('UserFactory', UserFactory)
 
-  UserFactory.$inject = ['$rootScope', '$http', '$location', '$stateParams', '$cookies', '$q', '$timeout', 'logger', 'jwtHelper']
+  UserFactory.$inject = ['$rootScope', '$http', '$location', '$stateParams', '$cookies', '$q', '$timeout', 'logger', 'jwtHelper', '$state']
 
   /* @ngInject */
-  function UserFactory ($rootScope, $http, $location, $stateParams, $cookies, $q, $timeout, logger, jwtHelper) {
+  function UserFactory ($rootScope, $http, $location, $stateParams, $cookies, $q, $timeout, logger, jwtHelper, $state) {
     var self
     var UserFactory = new UserClass()
 
-    function getToken (token) {
-      return jwtHelper.decodeToken(token)
-    }
+    // function getToken (token) {
+    //   return jwtHelper.decodeToken(token)
+    // }
     function getAuthenticate () {
       var deferred = $q.defer()
 
       $http.get('/api/authenticate').then(function (success) {
         if (success.data) {
           if (!_.isEmpty(success.data.user)) {
-            localStorage.setItem('JWT', success.data.user)
-            success.data.user = getToken(success.data.user)
+            localStorage.setItem('JWT', success.data.token)
+            success.data.user = success.data.user
           }
           $timeout(deferred.resolve(success.data))
         } else {
@@ -64,7 +64,7 @@
         if (data !== '0') {
           vm.editProfile = data
         } else { // Not Authenticated
-          $location.url('/login')
+          $state.go('signin')
           logger.error('Not Authenticated', data, 'Login')
         }
       })
@@ -73,21 +73,16 @@
       $http.post('/api/login', {
         email: vm.loginCred.email,
         password: vm.loginCred.password,
-        redirect: '/'
+        redirect: $stateParams.redirect || '/'
       }).then(function (success) {
         if (!_.isEmpty(success.data.user)) {
-          localStorage.setItem('JWT', success.data.user)
-          success.data.user = getToken(success.data.user)
+          localStorage.setItem('JWT', success.data.token)
+          success.data.user = success.data.user
         }
         self.onIdentity.bind(self)(success.data)
       }, function (error) {
         self.onIdFail.bind(self)(error)
       })
-    // .then(function (response) {
-    //   if (!response.error) {
-    //     logger.success(vm.loginCred.email, vm.loginCred, ' successfully logged in')
-    //   }
-    // })
     }
     UserClass.prototype.onIdentity = function (data) {
       if (!data) return ({error: true})
@@ -109,7 +104,7 @@
     }
 
     UserClass.prototype.onIdFail = function (error) {
-      logger.error(error.data.msg, error, 'Login/Signup')
+      logger.error(error.data.msg || error.data.message, error, 'Login/Signup')
       this.loginError = 'Authentication failed.'
       this.registerError = error
       $rootScope.$emit('loginfailed')
@@ -129,17 +124,17 @@
       logger.error(error.data, error, 'User Error')
     }
     UserClass.prototype.update = function (vm) {
-      $http.post('/api/account/profile', vm.editProfile)
+      $http.put('/api/account/profile', vm.editProfile)
         .then(this.updateProfile.bind(this), this.error.bind(this))
-    // logger.error(error.data, error, 'Login')
     }
     UserClass.prototype.signup = function (vm) {
       if (vm.loginCred.password === vm.loginCred.confirmPassword) {
+        if ($stateParams.redirect)vm.loginCred.redirect = $stateParams.redirect
         $http.post('/api/signup', vm.loginCred)
           .then(function (success) {
             if (!_.isEmpty(success.data.user)) {
-              localStorage.setItem('JWT', success.data.user)
-              success.data.user = getToken(success.data.user)
+              localStorage.setItem('JWT', success.data.token)
+              success.data.user = success.data.user
             }
             success.data.redirect = '/'
             self.onIdentity.bind(self)(success.data)
@@ -190,7 +185,7 @@
       $http.get('/api/logout').success(function (data) {
         localStorage.removeItem('JWT')
         $rootScope.$emit('logout')
-        $location.url('/')
+        $state.go('index')
         self.user = {}
         self.loggedin = false
       })
@@ -199,7 +194,7 @@
     UserClass.prototype.checkLoggedin = function () {
       getAuthenticate().then(function (data) {
         if (data.authenticated === false) {
-          $location.url('/signin')
+          $state.go('signin', {'redirect': $location.path()})
           logger.error('please sign in', {user: 'No User'}, 'Unauthenticated')
         }
       })
@@ -209,15 +204,18 @@
       getAuthenticate().then(function (data) {
         if (data.authenticated !== false) {
           logger.error(data.user.profile.name + ' You are already signed in', data.user, 'Authenticated Already')
-          $location.url('/')
+          $state.go('index')
         }
       })
     }
 
     UserClass.prototype.checkAdmin = function () {
       getAuthenticate().then(function (data) {
-        if (data.authenticated !== true || data.user.roles.indexOf('admin') === -1) {
-          $location.url('/')
+        var roles = true
+        if (data.user.roles && _.isArray(data.user.roles))roles = data.user.roles.indexOf('admin') === -1
+        if (data.authenticated !== true || roles) {
+          $state.go('index')
+          logger.error('requires access', {user: 'No User'}, 'Unauthorized')
         }
       })
     }

@@ -17,6 +17,8 @@ module.exports = {
       .verify.visible('#admin')
       .click('#admin')
       .pause(2000)
+      .click('#Users')
+      .pause(16000)
       .assert.containsText('body', 'jason@greenpioneersolutions.com')
       .end()
   },

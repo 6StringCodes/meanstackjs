@@ -2,13 +2,21 @@ module.exports = errorMiddleware
 
 var pug = require('pug')
 var httpStatus = require('http-status-codes')
+var debug = require('debug')('meanstackjs:error')
 
 function errorMiddleware (self) {
   self.app.use(function (err, req, res, next) {
     var code = 500
     var message = err
-    if (err.message) {
-      message = {message: err.message}
+    if (err.message || err.msg) {
+      message = {message: err.message || err.msg}
+    }
+    if (err.name === 'ValidationError') {
+      err.status = 400
+    }
+    if (err.message === 'MongoError') {
+      err.status = 400
+      if (err.code === 11000) message.message = 'duplicate key error '
     }
     if (typeof err.status === 'number') {
       code = err.status
@@ -32,7 +40,6 @@ function errorMiddleware (self) {
     } else if (code === 404) {
       self.debug('No notify for 404 error')
     } else {
-      // send mail?
       var html
       if (self.environment === 'production') {
         html = pug.renderFile('./server/error.pug', {
@@ -49,6 +56,7 @@ function errorMiddleware (self) {
       }
       return res.send(html)
     }
+    debug('error message & code:' + message.message + ' - ' + code)
     res.send(message)
   })
 }

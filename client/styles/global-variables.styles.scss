@@ -2,13 +2,12 @@
 /* MEANSTACK variables */
 $bootstrap-sass-asset-helper: false !default;
 
-//
 // Variables
 // --------------------------------------------------
 
 //Paths
 $fa-font-path:        "/bower_components/font-awesome/fonts" !default;
-$icon-font-path: if($bootstrap-sass-asset-helper, "bootstrap/", "bootstrap-sass/assets/fonts/bootstrap/") !default;
+$icon-font-path: if($bootstrap-sass-asset-helper, "bootstrap/", "/bower_components/bootstrap-sass/assets/fonts/bootstrap/") !default;
 
 //== Colors
 //## Gray and brand colors for use across Bootstrap.

@@ -2,7 +2,7 @@
 
 var path = require('path')
 var _ = require('lodash')
-var environment = require('../server/environment.js').get()
+var environment = require('./environment.js').get()
 var baseLine = {
   env: environment,
   // Root path of server
@@ -61,6 +61,11 @@ var baseLine = {
     // at all. The cookie will expunge when the browser is closed.
     maxAge: null
   },
+  maxcdn: {
+    companyAlias: process.env.MAXCDN_COMPANY_ALIAS || '',
+    consumerKey: process.env.MAXCDN_CONSUMER_KEY || '',
+    consumerSecret: process.env.MAXCDN_CONSUMER_SECRET || ''
+  },
   html: {
     googleAnalytics: 'UA-71654331-1',
     keywords: 'MEAN, MEANSTACKJS, mongodb, expressjs, angularjs,nodejs, javascript',
@@ -111,6 +116,68 @@ var baseLine = {
   },
   helmet: {
     // https://github.com/helmetjs/helmet
+  },
+  expresValidator: {
+    customValidators: {
+      isArray: function (value) { // req.assert('param', 'Invalid Param').isArray()
+        return _.isObject(value)
+      },
+      isObject: function (value) { // req.assert('param', 'Invalid Param').isObject()
+        return _.isObject(value)
+      },
+      isString: function (value) { // req.assert('param', 'Invalid Param').isString()
+        return _.isString(value)
+      },
+      isRegExp: function (value) { // req.assert('param', 'Invalid Param').isRegExp()
+        return _.isRegExp(value)
+      },
+      isEmpty: function (value) { // req.assert('param', 'Invalid Param').isEmpty()
+        return _.isEmpty(value)
+      },
+      gte: function (param, num) { // req.assert('param', 'Invalid Param').gte(5)
+        return _.gte(param, num)
+      },
+      lte: function (param, num) { // req.assert('param', 'Invalid Param').lte(5)
+        return _.lte(param, num)
+      },
+      gt: function (param, num) { // req.assert('param', 'Invalid Param').gt(5)
+        return _.gt(param, num)
+      },
+      lt: function (param, num) { // req.assert('param', 'Invalid Param').lt(5)
+        return _.lt(param, num)
+      }
+    },
+    customSanitizers: {
+      toArray: function (value) { // req.sanitize('postparam').toArray()
+        return _.toArray(value)
+      },
+      toFinite: function (value) { // req.sanitize('postparam').toFinite()
+        return _.toFinite(value)
+      },
+      toLength: function (value) { // req.sanitize('postparam').toLength()
+        return _.toLength(value)
+      },
+      toPlainObject: function (value) { // req.sanitize('postparam').toPlainObject()
+        return _.toPlainObject(value)
+      },
+      toString: function (value) { // req.sanitize('postparam').toString()
+        return _.toString(value)
+      }
+    },
+    errorFormatter: function (param, msg, value) {
+      var namespace = param.split('.')
+      var root = namespace.shift()
+      var formParam = root
+
+      while (namespace.length) {
+        formParam += '[' + namespace.shift() + ']'
+      }
+      return {
+        param: formParam,
+        msg: msg,
+        value: value
+      }
+    }
   },
   buildreq: {
     console: true,

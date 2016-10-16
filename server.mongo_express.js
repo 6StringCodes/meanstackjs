@@ -1,9 +1,10 @@
 module.exports = MongoExpress
 var express = require('express')
 var settings = require('./configs/settings.js').get()
+var debug = require('debug')('meanstackjs:mongoExpress')
 var mongoexpress = {
   mongodb: {
-    server: process.env.MONGODB_SERVER || 'localhost' || settings.mongodb.host,
+    server: process.env.MONGODB_SERVER || settings.mongodb.host,
     port: process.env.MONGODB_PORT || settings.mongodb.port,
 
     // useSSL: connect to the server using secure SSL
@@ -13,7 +14,7 @@ var mongoexpress = {
     autoReconnect: true,
 
     // poolSize: size of connection pool (number of connections to use)
-    poolSize: 4,
+    poolSize: settings.mongodb.size || 1,
 
     // set admin to true if you want to turn on admin features
     // if admin is true, the auth list below will be ignored
@@ -126,12 +127,11 @@ function MongoExpress (opts, done) {
   var self = this
   self.app = express()
   self.opts = opts
-  self.debug = require('debug')('meanstackjs:mongoExpress')
   self.app.set('port', settings.mongoexpress.port)
   self.app.use('/', require('mongo-express/lib/middleware')(mongoexpress))
   self.app.listen(self.app.get('port'), function () {
     console.log('Mongo-Express server listening on port %d ', self.app.get('port'))
-    self.debug('Express server listening on port %d', self.app.get('port'))
+    debug('Express server listening on port %d', self.app.get('port'))
   })
   done(null)
 }

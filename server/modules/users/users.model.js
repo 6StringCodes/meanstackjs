@@ -2,9 +2,11 @@ var bcrypt = require('bcrypt-nodejs')
 var crypto = require('crypto')
 var mongoose = require('mongoose')
 var settings = require('../../../configs/settings.js').get()
-var environment = require('../../environment.js').get()
+var environment = require('../../../configs/environment.js').get()
 var mail = require('../../mail.js')
 var validate = require('mongoose-validator')
+var timestamps = require('mongoose-timestamp')
+var debug = require('debug')('meanstackjs:users')
 
 var userSchema = new mongoose.Schema({
   email: {
@@ -77,6 +79,10 @@ var userSchema = new mongoose.Schema({
       default: ''
     }
   },
+  lastLoggedIn: {
+    type: Date,
+    default: Date.now
+  },
   resetPasswordToken: {
     type: String
   },
@@ -85,9 +91,7 @@ var userSchema = new mongoose.Schema({
   }
 })
 
-/**
- * Password hash middleware.
- */
+// Password hash middleware.
 userSchema.pre('save', function (next) {
   var user = this
   user.wasNew = user.isNew // for post-save
@@ -113,6 +117,7 @@ userSchema.pre('save', function (next) {
 })
 userSchema.post('save', function (user) {
   if (user.wasNew && environment === 'production') {
+    debug('email a new user')
     var message = {}
     message.to = user.email
     message.subject = settings.email.templates.welcome.subject
@@ -122,11 +127,20 @@ userSchema.post('save', function (user) {
     })
   }
 })
-/**
- * Helper method for validating user's password.
- */
+// Helper method for validating user's password.
 userSchema.methods.comparePassword = function (candidatePassword, cb) {
-  bcrypt.compare(candidatePassword, this.password, cb)
+  debug('start comparePassword')
+  var user = this
+  bcrypt.compare(candidatePassword, this.password, function (err, res) {
+    if (res) {
+      user.lastLoggedIn = Date.now()
+      user.save(function (err) {
+        if (err)console.log(err, 'err')
+      })
+    }
+    debug('end comparePassword')
+    cb(err, res)
+  })
 }
 userSchema.set('toObject', {
   virtuals: true,
@@ -160,5 +174,5 @@ userSchema.pre('validate', function (next) {
   if (typeof self.profile.name === 'string') self.profile.name = self.profile.name.trim()
   next()
 })
-
+userSchema.plugin(timestamps)
 module.exports = userSchema
