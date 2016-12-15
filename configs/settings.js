@@ -4,6 +4,9 @@ var path = require('path')
 var _ = require('lodash')
 var environment = require('./environment.js').get()
 var baseLine = {
+  app: {
+    name: 'MeanStackJS'
+  },
   env: environment,
   // Root path of server
   root: path.join(__dirname, '/../../..'),
@@ -34,8 +37,6 @@ var baseLine = {
       asi: true
     }
   },
-  // Template Engine
-  templateEngine: 'swig',
   // JWT Object https://github.com/auth0/node-jsonwebtoken
   jwt: {
     // is used to compute a JWT SIGN
@@ -61,21 +62,36 @@ var baseLine = {
     // at all. The cookie will expunge when the browser is closed.
     maxAge: null
   },
+  sessionName: 'session.id',
+  // Supports MAX CDN
   maxcdn: {
     companyAlias: process.env.MAXCDN_COMPANY_ALIAS || '',
     consumerKey: process.env.MAXCDN_CONSUMER_KEY || '',
     consumerSecret: process.env.MAXCDN_CONSUMER_SECRET || ''
   },
+  // SEO - Default html setup
+  googleAnalytics: 'UA-71654331-1',
   html: {
-    googleAnalytics: 'UA-71654331-1',
+    title: 'Mean Stack JS Demo',
     keywords: 'MEAN, MEANSTACKJS, mongodb, expressjs, angularjs,nodejs, javascript',
-    description: 'The Meanstack js is a opensource framework that is made for and by developers'
+    description: 'Mean Stack JS was built for ease of use with javascript at its core. MeanStackJS is a full stack javascript framework that will give you the power to develop web applications',
+    ogUrl: 'https://meanstackjs.herokuapp.com/',
+    ogType: 'website',
+    ogTitle: 'Mean Stack JS Demo',
+    ogDescription: 'Mean Stack JS was built for ease of use with javascript at its core. MeanStackJS is a full stack javascript framework that will give you the power to develop web applications',
+    ogImage: 'http://meanstackjs.com/images/logo/header.png',
+    fbAppId: '1610630462580116',
+    twitterCreator: '@greenpioneerdev',
+    twitterCard: 'summary_large_image',
+    twitterTitle: 'Mean Stack JS Demo',
+    twitterDescription: 'Mean Stack JS was built for ease of use with javascript at its core. MeanStackJS is a full stack javascript framework that will give you the power to develop web applications',
+    twitterUrl: 'https://meanstackjs.herokuapp.com/',
+    twitterImage: 'http://meanstackjs.com/images/logo/header.png',
+    twitterSite: '@meanstackjs',
+    canonical: 'https://meanstackjs.herokuapp.com/',
+    author: 'Green Pioneer Solutions'
   },
   seo: require('./seo.js'),
-  // The session cookie name
-  sessionName: 'connect.meanstackjs',
-  title: 'MEANSTACKJS',
-
   // AGGREGATION
   // bower_components -  Needs to be manually added below
   // modules - aggregated automatically
